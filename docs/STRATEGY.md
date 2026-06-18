@@ -100,9 +100,33 @@ The features are well-motivated and leakage-free, but on this small, survivorshi
 universe treat this as a *modest* improvement, not a step-change. The corpus is a hypothesis
 source, not ground truth.
 
-> Not yet shipped (documented as next steps): a market-regime *sizing* lever and a
-> three-strike / daily-goal circuit breaker from the corpus — risk-layer changes that affect
-> realized drawdown rather than the feature set.
+## 5c. Risk layer (v3) — implemented, validated, kept opt-in
+
+The corpus also suggested a **risk layer**: regime sizing (trade bigger on a hot tape,
+stand aside on a cold one), an "icebreaker" ladder (quarter→half→full size on the first
+picks), a daily-goal cap, and three-strike / daily-max-loss circuit breakers. We implemented
+all of it ([backtest.py](../premarket_trader/backtest.py), gated by `Params`) and ran a
+**component ablation** (selection + ML held fixed):
+
+| Variant | TEST Sharpe | TEST Return | FULL Sharpe | FULL Max DD |
+|---|---|---|---|---|
+| **v2 (risk layer off)** | 1.14 | +8.5% | 0.80 | −7.3% |
+| v3 full | 0.83 | +2.3% | 0.69 | −3.6% |
+| regime sizing only | 1.27 | +12.3% | 0.85 | −10.7% |
+| circuit breakers only | 1.06 | +7.5% | 0.77 | −7.3% |
+
+**Findings:** the *full* layer **hurts** risk-adjusted return — the icebreaker sizes down the
+highest-probability trades (backwards for a model whose edge *is* the probability ranking)
+and the daily-goal cap chops winning days. Only **regime sizing** lifts headline return/Sharpe,
+and it does so by *leveraging up to 1.5× on hot days*, which raises full-period drawdown
+(−7.3% → −10.7%) on a small sample — conviction-leverage, not a free lunch.
+
+**Decision:** the risk layer ships as an **opt-in** (all of it **off by default**); the
+validated **v2 configuration remains the shipped model.** Enable any piece via `Params`
+(`regime_sizing`, `daily_max_loss`, `three_strike`, `icebreaker`) if you want that trade-off.
+This is the point of validation: a corpus suggestion is a hypothesis, and this one did not earn
+a default-on slot. (The live bot keeps its own hard daily-loss kill switch regardless — see
+[BOT.md](BOT.md).)
 
 ## 6. Limitations (read these)
 

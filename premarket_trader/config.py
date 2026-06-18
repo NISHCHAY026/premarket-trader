@@ -47,6 +47,17 @@ class Params:
     slippage_bps: float = 10.0               # per side (basis points of notional)
     commission_per_share: float = 0.0
 
+    # ---- risk layer (v3): regime sizing + circuit breakers ----
+    # VALIDATED AS OPT-IN, DEFAULT OFF. Ablation (docs/STRATEGY.md §5c) showed the full
+    # layer hurts risk-adjusted return; only regime_sizing helps headline return/Sharpe,
+    # at the cost of higher drawdown. Defaults below reproduce the shipped v2 behaviour.
+    regime_sizing: bool = False              # scale size by market "temperature" (breadth)
+    regime_lookback: int = 20                # trailing window for the breadth median
+    icebreaker: bool = False                 # quarter -> half -> full size on the day's first picks
+    daily_max_loss: float = 10.0             # halt past this fractional loss (10.0 = effectively off)
+    daily_goal_mult: float = 2.0             # also halt once up daily_goal_mult * daily_max_loss
+    three_strike: int = 0                    # halt the day after this many losing trades (0 = off)
+
     # ---- model ----
     use_ml: bool = True
 

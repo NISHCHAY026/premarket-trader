@@ -29,6 +29,8 @@ def main():
     ap.add_argument("--no-optimize", action="store_true")
     ap.add_argument("--no-baseline", action="store_true",
                     help="skip the rules-only (no-ML) comparison")
+    ap.add_argument("--no-risk", action="store_true",
+                    help="disable the v3 risk layer (regime sizing + circuit breakers)")
     ap.add_argument("--name", default="walkforward")
     args = ap.parse_args()
 
@@ -37,6 +39,9 @@ def main():
         v = getattr(args, k if k != "universe_csv" else "universe_csv")
         if v:
             setattr(p, k, v)
+    if args.no_risk:                                   # v2 ablation: turn the risk layer off
+        p.regime_sizing, p.icebreaker, p.three_strike = False, False, 0
+        p.daily_max_loss = 10.0                        # effectively disables the loss/goal breaker
 
     tickers = load_universe(p.universe_csv)
     print(f"Downloading {len(tickers)} tickers from {p.start} ...")
