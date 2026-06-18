@@ -28,7 +28,12 @@ prior close, plus that morning's open):
 
 `gap`, `rvol` (prior-day volume vs its 20-day average), `log_price`, `atr_pct`,
 `range_prev`, `ret_1d/5d/20d`, `gap_vs_atr`, `dist_high20`, `vol_trend`,
-`market_breadth` (how many universe names gap ≥5% that day), `dow`, `month`.
+`market_breadth` (how many universe names gap ≥5% that day), `dow`, `month`,
+plus the **corpus-driven** additions (see §5b): `gap_pctile`, `rvol_pctile`, `n_gappers`
+(cross-sectional "leading gainer" rank), `close_location_prev`, `upper_wick_prev`,
+`lower_wick_prev`, `retrace_depth_prev` (prior-bar candle shape / 50%-retrace proxy),
+`extension_vs_ema9`, `consec_up_days` (over-extension), and `blue_sky_dist` (open vs
+the 252-day high).
 
 The trade **outcome** (used as the training label and for PnL) uses the day's high/low/
 close — known only *after* entry — so it is **never** used as a feature. A unit test
@@ -63,6 +68,41 @@ Default 135-name universe, 2018→present, $30k account, 1% risk/trade, 10 bps s
 The takeaway mirrors the playbook: **naively chasing every gap loses money; disciplined,
 model-driven selection is the edge.** (Your numbers will move with the universe, dates and
 data vintage — re-run to reproduce.)
+
+## 5b. Corpus-driven feature upgrade (v2)
+
+A deep mine of the full transcript corpus surfaced concrete, *daily-computable* signals the
+original model ignored. The highest-value, leakage-safe ones were added (the rest — float,
+reverse-split, news catalysts — were correctly dropped as not derivable from adjusted daily
+OHLCV):
+
+- **Cross-sectional leadership** (`gap_pctile`, `rvol_pctile`, `n_gappers`) — the corpus's
+  strongest, most-repeated idea ("trade the #1 leading gainer"). The original model scored
+  every name in isolation with no notion of whether it was *the* leader or the 8th-best.
+- **Prior-bar candle shape** (`close_location_prev`, wick ratios, `retrace_depth_prev`) —
+  encodes the topping-tail / strong-close vocabulary and the 50%-retracement rule.
+- **Over-extension** (`extension_vs_ema9`, `consec_up_days`) — the "too extended after 4–5
+  green candles" disqualifier.
+- **Blue-sky** (`blue_sky_dist`) — open above the long-horizon high = no overhead supply.
+
+Effect on the **held-out test slice** (params tuned only on the earlier train half):
+
+| OOS TEST | v1 (baseline) | v2 (corpus features) |
+|---|---|---|
+| Sharpe | 0.93 | **1.14** |
+| Max drawdown | −4.1% | **−2.8%** |
+| Profit factor | 1.55 | **1.80** |
+| Trades | 53 | 36 (more selective) |
+
+**Honest caveat:** the gains concentrate in the recent test slice on a **small sample
+(36 trades)**; over the full out-of-fold period the result is comparable (Sharpe ~0.80).
+The features are well-motivated and leakage-free, but on this small, survivorship-biased
+universe treat this as a *modest* improvement, not a step-change. The corpus is a hypothesis
+source, not ground truth.
+
+> Not yet shipped (documented as next steps): a market-regime *sizing* lever and a
+> three-strike / daily-goal circuit breaker from the corpus — risk-layer changes that affect
+> realized drawdown rather than the feature set.
 
 ## 6. Limitations (read these)
 

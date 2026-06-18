@@ -13,11 +13,19 @@ this repo turns it into a backtestable, trainable model.
 
 A name is a candidate only when it is genuinely *in play*. The classic filters:
 
-1. **Low price** — roughly **$1–$20**. Cheap enough to move fast in percentage terms.
-2. **Large percentage gain** — already **up strongly on the day** (a real gap), not drifting.
-3. **High relative volume** — trading **many multiples** of its normal volume; unusual interest.
-4. **Low float** — a **small tradable share count** (often < ~20M); thin supply amplifies moves.
-5. **A catalyst** — **breaking news** (earnings, FDA, contract, offering, etc.) explaining the move.
+1. **Low price** — **$2–$20**, sweet spot **$5–$10**. Below ~$2 is "too cheap" and avoided.
+2. **Large percentage gain** — already **up ≥10%** on the day (prefer **30%+**; the biggest
+   winners run 50–300%+). A real move, not a drift.
+3. **High relative volume** — at least **5× its average** volume (elite names run 50–500×+).
+   The volume surge is the demand signal.
+4. **Low float** — **under ~10M shares** preferred, under 20M acceptable, **sub-1M** the most
+   explosive; thin supply amplifies moves. (Exception: very recent IPOs trade low-float-like.)
+5. **A catalyst** — **breaking news** (FDA, contract, earnings, crypto/AI pivot, etc.), which
+   is what brings the volume. Headlines cluster **7:00–9:00 am ET**.
+
+Extra edges the corpus emphasizes: **blue-sky** setups (price above its all-time high → no
+overhead sellers), proximity to **half- and whole-dollar** levels (psychological support /
+resistance), and a recent **reverse split** (mechanically shrinks the float).
 
 The single best tell is being the **#1 percentage gainer** in the market — the most
 *obvious* stock, where the crowd's attention concentrates.
@@ -56,12 +64,15 @@ The second and third pullbacks can work too, but the **first** is highest-probab
 
 - **Match size to skill.** Beginners trade small (even smaller than feels right) and
   scale size up only as a documented edge is proven.
-- **Starter position first.** Take a small "feeler" each day; if it works, press; if it
-  fails, the caution flag is out — the tape is telling you it's a cold day.
+- **Icebreaker sizing.** The first trade of the day is the highest emotional risk — take it
+  at **~¼ size**, then scale **¼ → ½ → full** only after the day is green ("build a cushion").
 - **Cut losses fast; never average down** a loser. One undisciplined add can erase weeks
   of gains.
-- **Daily max loss / no-trade days.** Survive the cold stretches; protect the account so
-  you're around when conditions turn hot.
+- **Daily max loss + profit goal + "three strikes."** A hard daily max-loss **ends the day**
+  when hit; a daily **profit goal of ~2× that max loss**; and stop after **~3 losing trades**
+  even if the dollar limit isn't reached. No-trade days are fine.
+- **Size to the tape.** Trade bigger when the market is hot (many names up >100%), and small
+  or not at all when it's cold — the #1 way accounts blow up is full size on a cold day.
 - **Consistency over home runs.** The edge is a repeatable checklist executed with
   discipline, not any single trade.
 

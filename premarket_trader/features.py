@@ -16,6 +16,10 @@ FEATURE_COLS = [
     "gap", "rvol", "log_price", "atr_pct", "range_prev",
     "ret_1d", "ret_5d", "ret_20d", "gap_vs_atr", "dist_high20",
     "vol_trend", "market_breadth", "dow", "month",
+    # ---- corpus-driven additions (all lookahead-safe; see docs/STRATEGY.md) ----
+    "gap_pctile", "rvol_pctile", "n_gappers",            # cross-sectional leadership
+    "close_location_prev", "upper_wick_prev", "lower_wick_prev", "retrace_depth_prev",
+    "extension_vs_ema9", "consec_up_days", "blue_sky_dist",
 ]
 
 
@@ -44,6 +48,26 @@ def _per_ticker(g: pd.DataFrame) -> pd.DataFrame:
     g["gap_vs_atr"] = g["gap"] / g["atr_pct"].replace(0, np.nan)
     g["dist_high20"] = g["prev_close"] / g["high"].rolling(20).max().shift(1) - 1.0
     g["vol_trend"] = avg_vol20 / g["volume"].rolling(60).mean().shift(1)
+
+    # ---- corpus-driven features (all from PRIOR completed bars; no lookahead) ----
+    prev_open, prev_high, prev_low = (g["open"].shift(1), g["high"].shift(1), g["low"].shift(1))
+    rng = (prev_high - prev_low).replace(0, np.nan)
+    body_hi = pd.concat([prev_open, prev_close], axis=1).max(axis=1)
+    body_lo = pd.concat([prev_open, prev_close], axis=1).min(axis=1)
+    # where the prior bar closed in its range + wick anatomy (topping/bottoming tails)
+    g["close_location_prev"] = ((prev_close - prev_low) / rng).fillna(0.5)
+    g["upper_wick_prev"] = ((prev_high - body_hi) / rng).fillna(0.0)
+    g["lower_wick_prev"] = ((body_lo - prev_low) / rng).fillna(0.0)
+    g["retrace_depth_prev"] = ((prev_high - prev_close) / rng).fillna(0.5)  # 50%-retrace proxy
+    # over-extension / exhaustion
+    ema9 = g["close"].ewm(span=9, adjust=False).mean().shift(1)
+    g["extension_vs_ema9"] = (prev_close - ema9) / ema9
+    up = (g["close"] > g["close"].shift(1)).astype(int)
+    run = up.groupby((up != up.shift()).cumsum()).cumcount() + 1
+    g["consec_up_days"] = (run * up).shift(1).clip(upper=6)
+    # blue-sky: open above the long-horizon high = no overhead resistance
+    hist_high = g["high"].rolling(252, min_periods=20).max().shift(1)
+    g["blue_sky_dist"] = g["open"] / hist_high - 1.0
     return g
 
 
@@ -96,6 +120,10 @@ def build_events(prices: pd.DataFrame, p: Params) -> pd.DataFrame:
         & (feat["open"] <= p.price_max)
         & (feat["dollar_vol_prev"] >= p.min_dollar_vol)
     ].copy()
+    # cross-sectional "leading gainer" features over the day's candidate pool (open-time)
+    pool["gap_pctile"] = pool.groupby("date")["gap"].rank(pct=True)
+    pool["rvol_pctile"] = pool.groupby("date")["rvol"].rank(pct=True)
+    pool["n_gappers"] = pool.groupby("date")["gap"].transform("count")
     pool = pool.replace([np.inf, -np.inf], np.nan).dropna(subset=FEATURE_COLS)
     pool = _simulate_outcome(pool, p)
     return pool.sort_values("date").reset_index(drop=True)

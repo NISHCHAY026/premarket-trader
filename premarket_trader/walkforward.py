@@ -21,7 +21,7 @@ from . import metrics as metrics_mod
 
 GRID = {
     "gap_min": [0.03, 0.05, 0.08, 0.12],
-    "rvol_min": [1.0, 1.5, 2.5],
+    "rvol_min": [1.5, 3.0, 5.0],          # corpus: "at least 5x relative volume"
     "ml_min_proba": [0.45, 0.50, 0.55, 0.60],
     "max_positions": [3, 5, 10],
 }
