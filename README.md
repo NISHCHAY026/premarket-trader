@@ -76,6 +76,22 @@ python tests/test_strategy.py     # outcome logic, no-lookahead guard, backtest 
 # or: pytest -q
 ```
 
+## Trading bot
+
+A live/paper trading bot wraps the model — **paper by default, real money never without
+explicit approval**. The same selection + sizing code drives the backtest and the live run,
+so the bot's historical replay reproduces the research backtest exactly (27.1% / Sharpe 0.92).
+
+```bash
+python scripts/run_bot.py            # paper: print next session's plan (no orders)
+python scripts/backtest_bot.py       # replay the live code path over history
+```
+
+Robinhood (real money) is **hard-gated**: live mode is blocked unless you pass `--approve`
+**and** `--confirm "I APPROVE LIVE TRADING"`, sends nothing unless you also add `--execute`,
+reads credentials only from the environment, and enforces per-order/daily caps plus a
+daily max-loss kill switch. Full details: [docs/BOT.md](docs/BOT.md).
+
 ## Project structure
 
 ```
@@ -89,8 +105,12 @@ premarket_trader/
   metrics.py       CAGR, Sharpe, drawdown, win rate, profit factor, expectancy
   scanner.py       rank today's gap setups with the trained model
   report.py        metrics JSON + CSVs + equity-curve plot
-scripts/           run_walkforward.py, scan.py
-docs/              PLAYBOOK.md (methodology), STRATEGY.md (model + limitations)
+  bot/
+    broker.py      PaperBroker (simulated) + RobinhoodBroker (hard-gated)
+    risk.py        sizing, caps, daily max-loss kill switch
+    engine.py      daily cycle: backtest replay + plan_today
+scripts/           run_walkforward.py, scan.py, run_bot.py, backtest_bot.py
+docs/              PLAYBOOK.md, STRATEGY.md, BOT.md
 tests/             correctness tests
 ```
 

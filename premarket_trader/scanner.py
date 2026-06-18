@@ -37,10 +37,19 @@ def scan(p: Params, lookback_days: int = 120,
 
     events["date"] = pd.to_datetime(events["date"])
     scan_day = events["date"].max()
-    train = events[events["date"] < scan_day]
+    # Match the backtest's embargo so live probabilities align with the validated
+    # out-of-fold model (the backtest trains on data <= test_start - embargo).
+    train = events[events["date"] <= scan_day - pd.Timedelta(days=p.embargo_days)]
     today = events[events["date"] == scan_day].copy()
     if today.empty:
         return pd.DataFrame()
+
+    # Freshness guard: the "next session" plan is only valid on a current bar.
+    staleness = (pd.Timestamp.today().normalize() - scan_day.normalize()).days
+    if staleness > 4:
+        print(f"[scanner] WARNING: latest completed session is {staleness} days old "
+              f"({scan_day.date()}); this plan may be stale. Use premarket_overrides "
+              "for a genuine pre-open scan.")
 
     if p.use_ml and train["win"].nunique() == 2 and len(train) >= 200:
         mdl = model_mod.fit_full(train)

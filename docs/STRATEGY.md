@@ -77,6 +77,10 @@ data vintage — re-run to reproduce.)
   assumption is optimistic for the cheapest names.
 - **Single split.** The headline uses one chronological train/test split; a rolling
   walk-forward of the thresholds would be more robust (the ML layer already rolls).
+- **Back-adjusted prices.** Data is pulled with `auto_adjust=True`, which prevents fake
+  split-induced gaps but bakes future split/dividend factors into past bars — so pre-split
+  gap magnitudes are mildly non-causal. A point-in-time (as-of) price feed would remove
+  this; for low-priced names where splits are common it is a real (if small) bias.
 
 Treat this as a **rigorous research framework**, not a turnkey money printer. The honest
 edge lives in execution and in data (intraday + float) that this free-data demo can't see.
