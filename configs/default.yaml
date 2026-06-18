@@ -1,0 +1,41 @@
+# Premarket Trader — default parameters.
+# Run:  python scripts/run_walkforward.py --config configs/default.yaml
+
+# data / universe
+start: "2018-01-01"
+end: null
+universe_csv: null            # path to a custom one-ticker-per-line file, or null
+
+# candidate gap-event pool (the methodology's universe)
+event_gap_min: 0.02           # >= 2% overnight gap to be considered
+price_min: 1.0                # pillar 1: low-priced
+price_max: 20.0
+min_dollar_vol: 1000000.0     # prior-day $ volume liquidity floor
+
+# selection filters (grid-searched by the walk-forward optimizer)
+gap_min: 0.04
+rvol_min: 1.5
+ml_min_proba: 0.50
+max_positions: 5
+
+# trade management — the methodology's signature 2:1 bracket
+stop_pct: 0.08
+profit_ratio: 2.0
+
+# sizing / risk
+account: 30000.0
+risk_per_trade: 0.01
+max_pos_frac: 0.50
+
+# costs
+slippage_bps: 10.0
+commission_per_share: 0.0
+
+# model
+use_ml: true
+
+# walk-forward
+train_frac: 0.6
+ml_train_years: 3.0
+ml_test_months: 6.0
+embargo_days: 3

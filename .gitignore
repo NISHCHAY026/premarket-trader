@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+.env
+.DS_Store
+.ipynb_checkpoints/
+
+# data caches (downloaded at runtime)
+*.parquet
+data/
+
+# results — keep only the committed demo artifacts
+results/*
+!results/wf_demo_equity.png
+!results/wf_demo_metrics.json
