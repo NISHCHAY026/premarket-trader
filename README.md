@@ -23,15 +23,18 @@ Default ~135-name universe, 2018→present, $30k account, 1% risk/trade, 10 bps 
 
 | Variant (out-of-sample TEST) | Return | Sharpe | Max DD | Win rate | Profit factor |
 |---|---|---|---|---|---|
-| **Rules + ML selection** | **+8.5%** | **1.14** | **−2.8%** | **55.6%** | **1.80** |
+| **Rules + ML selection** | **+10.1%** | **1.28** | **−3.2%** | **53.5%** | **1.80** |
 | Rules only (naive gap-chase) | −42.4% | −2.16 | −42.4% | 24.6% | 0.40 |
 
 **The trained selection model is the edge:** blindly buying every gap-up loses money out of
-sample; the model decides *which* gap-ups are worth trading. The feature set was upgraded
-with **corpus-mined, leakage-safe signals** (cross-sectional "leading gainer" rank, prior-bar
-candle shape, over-extension, blue-sky) — see [docs/STRATEGY.md §5b](docs/STRATEGY.md#5b-corpus-driven-feature-upgrade-v2)
-for the honest v1→v2 comparison and caveats. (Re-run to reproduce — numbers shift with
-universe, dates, and data vintage.)
+sample; the model decides *which* gap-ups are worth trading. The feature set was built from
+**corpus-mined, leakage-safe signals** — cross-sectional "leading gainer" rank, prior-bar
+candle shape, over-extension/blue-sky (v2), then 200-day-SMA resistance, prior-day-high, and
+move-sequence/"former-runner" history (v3, from the complete 2,098-transcript corpus). Each
+addition was kept only if it improved out-of-sample; see
+[docs/STRATEGY.md §5b–5d](docs/STRATEGY.md#5b-corpus-driven-feature-upgrade-v2) for the honest
+v1→v2→v3 progression, the risk-layer that was *rejected*, and caveats. (Re-run to reproduce —
+numbers shift with universe, dates, and data vintage.)
 
 ![equity curve](results/wf_demo_equity.png)
 

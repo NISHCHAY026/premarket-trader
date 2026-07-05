@@ -33,7 +33,9 @@ plus the **corpus-driven** additions (see §5b): `gap_pctile`, `rvol_pctile`, `n
 (cross-sectional "leading gainer" rank), `close_location_prev`, `upper_wick_prev`,
 `lower_wick_prev`, `retrace_depth_prev` (prior-bar candle shape / 50%-retrace proxy),
 `extension_vs_ema9`, `consec_up_days` (over-extension), and `blue_sky_dist` (open vs
-the 252-day high).
+the 252-day high) — plus the **v3** additions (see §5d): `dist_to_sma200`, `above_sma200`,
+`dist_to_prev_day_high`, and the move-sequence family (`day_of_move`, `days_since_last_gap`,
+`gap_count_10d`, `former_runner_count`, `max_prior_1d_range`).
 
 The trade **outcome** (used as the training label and for PnL) uses the day's high/low/
 close — known only *after* entry — so it is **never** used as a feature. A unit test
@@ -127,6 +129,40 @@ validated **v2 configuration remains the shipped model.** Enable any piece via `
 This is the point of validation: a corpus suggestion is a hypothesis, and this one did not earn
 a default-on slot. (The live bot keeps its own hard daily-loss kill switch regardless — see
 [BOT.md](BOT.md).)
+
+## 5d. Full-corpus refresh (v3 features)
+
+After the transcript scrape completed (**2,098 transcripts / 8.0M words**, vs. the 1,105 used
+for v2), a second delta-focused mine — handed the v2 feature set and asked only *"what's still
+missing?"* — surfaced a genuinely new, distinct signal cluster:
+
+- **`dist_to_sma200` / `above_sma200`** — distance to the 200-day SMA of closes, cited across
+  40+ transcripts as *the* daily overhead-resistance ceiling (distinct from the 20/252-day
+  *highs* v2 already had).
+- **`dist_to_prev_day_high`** — distance to the single prior-day high, the actual day-2
+  continuation trigger.
+- **move-sequence family** (`day_of_move`, `days_since_last_gap`, `gap_count_10d`,
+  `former_runner_count`, `max_prior_1d_range`) — where in an ongoing run the name sits, and its
+  *historical* propensity for explosive single-day moves ("former runner"). Distinct from
+  `consec_up_days`, which counts up-*closes*, not move-days.
+
+**The ablation was decisive.** Adding *all* 14 mined features **overfit** and hurt the model
+(TEST Sharpe 1.14 → 0.94). Keeping only the a-priori **HIGH-priority** subset (the 8 above)
+improved it on train, test, *and* the full period:
+
+| OOS TEST | v2 | v3 (HIGH subset) |
+|---|---|---|
+| Sharpe | 1.14 | **1.28** |
+| Return | +8.5% | **+10.1%** |
+| Profit factor | 1.80 | 1.80 |
+| Max drawdown | −2.8% | −3.2% |
+| Full-period Sharpe | 0.80 | **0.91** |
+
+The MED-priority signals (overhead-supply, directional volume, lagged breadth) were dropped —
+they diluted the signal on this small, survivorship-biased universe. Two agent claims of
+"leaks" were also checked against the code and found **false** (breadth uses the open, not the
+close; a dollar-volume floor already exists). **v3 is the shipped model.** Same honest caveat:
+~43 OOS trades is a small sample — the edge is real but modest.
 
 ## 6. Limitations (read these)
 

@@ -40,13 +40,13 @@ scripts/
 and cross-checks it against the research backtest:
 
 ```
-research : Return 27.1% | CAGR 4.7% | Sharpe 0.92 | MaxDD -5.0% | Win 57.5% | PF 1.64 | Trades 120
-bot loop : Return 23.1% | CAGR 4.1% | Sharpe 0.89 | MaxDD -5.0% | Win 57.5% | PF 1.56 | Trades 120
+research : Return 28.2% | CAGR 4.9% | Sharpe 0.91 | MaxDD -6.0% | Win 52.3% | PF 1.60 | Trades 128
+bot loop : Return 27.2% | CAGR 4.7% | Sharpe 0.93 | MaxDD -6.0% | Win 52.8% | PF 1.60 | Trades 123
 ```
 
-Same trades and win rate. The bot's slightly lower return is the **daily planned-risk
-budget** (the kill switch) clamping position size on the most aggressive days — the safety
-control working, not a logic discrepancy.
+The live code path reproduces the research backtest (v3 model). The tiny gap is the
+**daily planned-risk budget** (the kill switch) clamping size on the most aggressive days —
+the safety control working, not a logic discrepancy.
 
 ## Safety review
 

@@ -20,6 +20,9 @@ FEATURE_COLS = [
     "gap_pctile", "rvol_pctile", "n_gappers",            # cross-sectional leadership
     "close_location_prev", "upper_wick_prev", "lower_wick_prev", "retrace_depth_prev",
     "extension_vs_ema9", "consec_up_days", "blue_sky_dist",
+    # ---- v3: full-corpus delta-mine, HIGH-priority subset only (trend-MA + prior-day-high + move-seq) ----
+    "dist_to_sma200", "above_sma200", "dist_to_prev_day_high",
+    "day_of_move", "days_since_last_gap", "gap_count_10d", "former_runner_count", "max_prior_1d_range",
 ]
 
 
@@ -68,6 +71,27 @@ def _per_ticker(g: pd.DataFrame) -> pd.DataFrame:
     # blue-sky: open above the long-horizon high = no overhead resistance
     hist_high = g["high"].rolling(252, min_periods=20).max().shift(1)
     g["blue_sky_dist"] = g["open"] / hist_high - 1.0
+
+    # ---- v3 (full-corpus delta-mine); all from prior bars + today's open, no lookahead ----
+    # 200-day SMA of closes = the slow trend resistance level the corpus cites constantly
+    sma200 = g["close"].rolling(200, min_periods=100).mean().shift(1)
+    g["dist_to_sma200"] = (g["open"] / sma200 - 1.0).fillna(0.0)
+    g["above_sma200"] = (g["open"] > sma200).astype(float)
+    # distance to the single prior-day high = the day-2 continuation trigger
+    g["dist_to_prev_day_high"] = g["open"] / prev_high - 1.0
+    # move-day sequence: a "move day" = big up-close / big gap / wide range (prior bars only)
+    _G, _R = 0.10, 0.20
+    mv = (((g["close"] / prev_close - 1.0) >= _G)
+          | ((g["open"] / prev_close - 1.0) >= _G)
+          | (((g["high"] - g["low"]) / prev_close) >= _R)).astype(int)
+    mv_run = (mv.groupby((mv != mv.shift()).cumsum()).cumcount() + 1) * mv
+    g["day_of_move"] = 1.0 + mv_run.shift(1).fillna(0.0)      # which day of an ongoing run is today
+    _idx = pd.Series(np.arange(len(g)), index=g.index)
+    g["days_since_last_gap"] = (_idx - _idx.where(mv == 1).ffill().shift(1)).clip(upper=60).fillna(60.0)
+    g["gap_count_10d"] = mv.rolling(10).sum().shift(1)
+    g["former_runner_count"] = mv.rolling(252, min_periods=20).sum().shift(1)   # historical propensity
+    g["max_prior_1d_range"] = (((g["high"] - g["low"]) / prev_close)
+                               .rolling(252, min_periods=20).max().shift(1))
     return g
 
 
