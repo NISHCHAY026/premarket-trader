@@ -75,8 +75,10 @@ def _per_ticker(g: pd.DataFrame) -> pd.DataFrame:
     # ---- v3 (full-corpus delta-mine); all from prior bars + today's open, no lookahead ----
     # 200-day SMA of closes = the slow trend resistance level the corpus cites constantly
     sma200 = g["close"].rolling(200, min_periods=100).mean().shift(1)
-    g["dist_to_sma200"] = (g["open"] / sma200 - 1.0).fillna(0.0)
-    g["above_sma200"] = (g["open"] > sma200).astype(float)
+    # NaN must propagate: fabricating 0.0 here would defeat the dropna guard below
+    # and tell the model "the open sits exactly on the 200-day SMA".
+    g["dist_to_sma200"] = g["open"] / sma200 - 1.0
+    g["above_sma200"] = np.where(sma200.notna(), (g["open"] > sma200).astype(float), np.nan)
     # distance to the single prior-day high = the day-2 continuation trigger
     g["dist_to_prev_day_high"] = g["open"] / prev_high - 1.0
     # move-day sequence: a "move day" = big up-close / big gap / wide range (prior bars only)

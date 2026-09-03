@@ -164,6 +164,76 @@ they diluted the signal on this small, survivorship-biased universe. Two agent c
 close; a dollar-volume floor already exists). **v3 is the shipped model.** Same honest caveat:
 ~43 OOS trades is a small sample — the edge is real but modest.
 
+## 5e. Self-improvement round (v4): correctness fixes shipped, tuning rejected
+
+A round of "test and self-improve" was run against the full 2,212-transcript knowledge base.
+Three tuning families (label geometry, feature pruning, LightGBM hyper-parameters) were
+selected on **train** and evaluated once on test. An adversarial audit then reviewed both the
+model and the round itself. The outcome is worth recording precisely, because the headline
+result is **negative** and two of the findings invalidate earlier claims.
+
+### What was rejected
+
+**The v4 tuning did not improve anything — and it did not degrade anything either.**
+The combined config scored TEST Sharpe 0.99 vs the incumbent 1.28, which looks like a loss but
+is not one:
+
+- It took **32 trades vs 43**, at a **higher** per-trade expectancy ($74.45 vs $70.56) and a
+  better profit factor (1.87 vs 1.80). All of the return gap is trade *count*; none is edge.
+- Equity-curve Sharpe on a zero-inflated series scales with √(active-day density), so
+  √(32/43) = 0.86 alone predicts 1.28 → 1.10 against the observed 0.99. Most of the apparent
+  "degradation" is a frequency artifact, not performance.
+- A 20,000-draw bootstrap gives **SE(Sharpe) ≈ 0.63** and a 95% CI of [−0.10, 2.37] on 43
+  trades. The minimum detectable Sharpe difference at 80% power is ~1.5–3.8; the observed gap
+  was 0.29. The round had roughly **5–10% power**.
+
+Correct conclusion: **no detectable difference; the experiment was underpowered.** The
+baseline was kept, but "v4 is worse" would be an over-claim.
+
+**A calibration finding was also rejected.** Test-slice trades showed win rates of 60% / 73% /
+38.5% across rising probability buckets — an apparent inversion suggesting a probability *cap*.
+It does not replicate: train gives Spearman(proba, return) = **+0.006 (p=0.95)** and test
+**−0.170 (p=0.27)** — opposite signs, neither significant, and the train buckets put the *worst*
+outcomes in the middle rather than the top. Acting on it would have been fitting the holdout.
+
+### What was fixed (these were real defects)
+
+1. **The no-lookahead test was vacuous.** It passed unchanged with five deliberately injected
+   leaks, including one reading a *future* bar. Four compounding causes: it perturbed only the
+   last bar per ticker (which never entered the candidate pool), used `.reindex()` that hid
+   membership changes, never perturbed volume at all, and ran on a 90-bar fixture that left
+   three features constant. Replaced with a per-bar perturbation audit over a 320-bar, 5-ticker
+   fixture that tampers H/L/C **and volume** on probe bars and asserts every feature dated ≤ T
+   is unchanged — plus a **mutation guard** that injects a known leak and fails if the audit
+   does not catch it, and a degeneracy assertion. The runner now auto-discovers tests so a new
+   one cannot be silently left un-run (the mutation guard was, at first).
+   **Under this real audit the v3 feature math is clean — no leak found.**
+2. **Fabricated SMA-200 inputs.** `dist_to_sma200` was `.fillna(0.0)` and `above_sma200`
+   swallowed NaN, which defeated the `dropna` guard and told the model "the open sits exactly
+   on the 200-day SMA". NaN now propagates so short-history rows are dropped honestly.
+3. **The live scanner was inert.** Its 120-day lookback yielded ~84 trading bars — below the
+   200-day SMA's `min_periods=100` — so six of 32 features were systematically wrong live, and
+   the candidate pool (176 rows) sat below the model's own `len(train) >= 200` gate, meaning
+   `ml_proba` was always NaN and the watchlist was **guaranteed empty**. Lookback raised to 600
+   days: 405 bars/ticker, 2,714-row pool, 2,709 training rows, zero NaN features. It now
+   returns an empty list only when nothing genuinely qualifies.
+
+Fixes 2–3 changed the event set by ~1.2%, so the headline was recomputed: TEST Sharpe
+1.28 → **1.68**, return +10.1% → **+13.9%**, PF 1.80 → **2.11**. Read that as *the same edge
+measured on non-fabricated inputs*, **not** as an improvement — it is well inside the ±0.63
+standard error.
+
+### Guardrails adopted
+
+- **Stop selecting on equity-curve Sharpe** when trade frequency varies; it is mechanically
+  biased toward variants that trade more often. Prefer per-trade expectancy with its SE.
+- **This test slice has now been read 7+ times.** The incumbent number is a selected maximum
+  and is upward-biased; a future comparison needs a genuinely untouched holdout.
+- **Do not run test comparisons at n≈44.** Nothing below a ~1.5 Sharpe delta is reportable.
+- `ml_min_proba` is an absolute threshold while `profit_ratio` shifts the whole probability
+  distribution, so the label-geometry sweep was also an unintended selectivity sweep. Any
+  re-run should thresholds on train **quantiles** instead.
+
 ## 6. Limitations (read these)
 
 - **Daily-bar fidelity.** We approximate an intraday method with open→close trades; the

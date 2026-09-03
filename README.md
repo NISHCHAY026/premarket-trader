@@ -23,8 +23,8 @@ Default ~135-name universe, 2018→present, $30k account, 1% risk/trade, 10 bps 
 
 | Variant (out-of-sample TEST) | Return | Sharpe | Max DD | Win rate | Profit factor |
 |---|---|---|---|---|---|
-| **Rules + ML selection** | **+10.1%** | **1.28** | **−3.2%** | **53.5%** | **1.80** |
-| Rules only (naive gap-chase) | −42.4% | −2.16 | −42.4% | 24.6% | 0.40 |
+| **Rules + ML selection** | **+13.9%** | **1.68** | **−2.4%** | **61.4%** | **2.11** |
+| Rules only (naive gap-chase) | −22.3% | −1.68 | −22.3% | 20.0% | 0.36 |
 
 **The trained selection model is the edge:** blindly buying every gap-up loses money out of
 sample; the model decides *which* gap-ups are worth trading. The feature set was built from
@@ -86,7 +86,7 @@ python tests/test_strategy.py     # outcome logic, no-lookahead guard, backtest 
 
 A live/paper trading bot wraps the model — **paper by default, real money never without
 explicit approval**. The same selection + sizing code drives the backtest and the live run,
-so the bot's historical replay reproduces the research backtest exactly (27.1% / Sharpe 0.92).
+so the bot's historical replay reproduces the research backtest.
 
 ```bash
 python scripts/run_bot.py            # paper: print next session's plan (no orders)

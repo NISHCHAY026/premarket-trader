@@ -16,7 +16,7 @@ from .features import build_events, FEATURE_COLS
 from . import model as model_mod
 
 
-def scan(p: Params, lookback_days: int = 120,
+def scan(p: Params, lookback_days: int = 600,
          premarket_overrides: dict[str, float] | None = None) -> pd.DataFrame:
     tickers = load_universe(p.universe_csv)
     start = (pd.Timestamp.today() - pd.Timedelta(days=lookback_days)).strftime("%Y-%m-%d")
