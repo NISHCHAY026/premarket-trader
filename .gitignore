@@ -16,3 +16,12 @@ data/
 results/*
 !results/wf_demo_equity.png
 !results/wf_demo_metrics.json
+
+# Secrets: keys, certificates, browser cookie exports, local env files
+.env
+.env.local
+*.pem
+*.key
+*.p12
+*.pfx
+cookies*.txt
